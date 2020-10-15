@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--日志级别以及优先级排序: OFF > FATAL > ERROR > WARN > INFO > DEBUG > TRACE > ALL -->
+<!-- status log4j2内部日志级别 -->
+<configuration status="INFO">
+    <!-- 全局参数 -->
+    <Properties>
+        <property name="FILE_PATH" value="log" />
+        <Property name="APP_NAME">springboot-mqtt-merge</Property>
+<!--        <Property name="STDOUT_PATTERN">%d{yyyy-MM-dd HH:mm:ss,SSS} | %style{${sys:local-ip}}{highlight,cyan} | %style{%-5level}{highlight,green} | %style{%t}{blue} | %style{%c{1.}:%L}{yellow} | %m%n</Property>-->
+        <Property name="STDOUT_PATTERN">%d{yyyy-MM-dd HH:mm:ss,SSS} | %style{%-5level}{highlight,green} | %style{%t}{blue} | %style{%c{1.}:%L}{yellow} | %m%n</Property>
+        <Property name="RDB_PATTERN">%d{yyyy-MM-dd HH:mm:ss,SSS}|${sys:local-ip}|%level|%t|%c|%m%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT" follow="true">
+            <PatternLayout>
+                <pattern>${STDOUT_PATTERN}</pattern>
+                <disableAnsi>false</disableAnsi>
+                <noConsoleNoAnsi>false</noConsoleNoAnsi>
+            </PatternLayout>
+        </Console>
+
+        <!-- 文件 每次运行程序会自动清空，由append属性决定 -->
+        <File name="ERROR" fileName="${FILE_PATH}/sys_error.log" append="false">
+            <!-- 指定error 级别的日志 -->
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT"
+                             onMismatch="DENY" />
+            <PatternLayout>
+                <pattern>${RDB_PATTERN}</pattern>
+            </PatternLayout>
+        </File>
+
+        <!-- 滚动文件 -->
+        <RollingFile name="ROLLING_FILE" fileName="${FILE_PATH}/sys-info.log"
+                     filePattern="${FILE_PATH}/sys-info-%d{yyyy-MM-dd}.log">
+            <PatternLayout>
+                <pattern>${RDB_PATTERN}</pattern>
+            </PatternLayout>
+            <!-- 按大小划分 -->
+            <SizeBasedTriggeringPolicy size="50 MB" />
+        </RollingFile>
+
+        <!--输出到kafka-->
+        <Kafka name ="KAFKA" topic="elk-${APP_NAME}" syncSend="false">  
+          <PatternLayout>
+                <pattern>${RDB_PATTERN}</pattern>
+          </PatternLayout>
+          <Property name ="bootstrap.servers" >127.0.0.1:9092</Property> 
+          <Property name ="retries">3</Property> 
+          <Property name ="linger.ms" >1000</Property> 
+          <Property name ="buffer.memory" > 104857600</Property> 
+        </Kafka>
+    </Appenders>
+    <Loggers>
+       <!-- additivity属性作用是在使用当前Logger配置的Appender打印日志 -->
+        <Logger name="org.springframework" level="INFO" />
+        <Logger name="io.netty" level="INFO" />
+        <Logger name="org.apache.kafka" level="WARN" />
+
+           <!-- Root表示所有Logger用Root中的Appender打印日志  -->
+       <Root level ="INFO" >
+        <AppenderRef ref="ERROR"></AppenderRef>
+        <AppenderRef ref="ROLLING_FILE"></AppenderRef>     
+        <AppenderRef ref="KAFKA"></AppenderRef>
+        <AppenderRef ref="STDOUT"></AppenderRef>
+       </Root>
+    </Loggers>
+</configuration>

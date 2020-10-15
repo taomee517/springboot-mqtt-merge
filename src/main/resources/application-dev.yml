@@ -1,0 +1,51 @@
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 6379
+  kafka:
+    bootstrap-servers: 127.0.0.1:9092
+
+  mqtt:
+    server:
+      username: admin						# 账号
+      password: public						# 密码
+      auth-check-enable: false
+      tcp-port: 55100
+      ssl-port: 55101
+      ws-port: 55102
+      wss-port: 55103
+      websocket-path: /mqtt
+      ssl-password: 123456
+      ssl-enable: false
+      server-key-path: keystore/mqtt-broker.pfx
+#      root-key-path: keystore/root.jks
+    client:
+      host-url: tcp://127.0.0.1:55100       # mqtt连接tcp地址
+      timeout: 100                          # 超时时间
+      keepalive: 100                        # 保持连接数
+
+
+  ignite:
+    config:
+      # broker唯一标识
+      broker-id: mqtt-broker-1
+      # 持久化磁盘存储路径
+#      persistence-store-path: D:/ignite/data
+      # 持久化缓存内存初始化大小(MB)
+      persistence-initial-size: 64
+      # 持久化缓存占用内存最大值(MB)
+      persistence-max-size: 128
+      # 非持久化缓存内存初始化大小(MB)
+      not-persistence-initial-size: 64
+      # 非持久化缓存占用内存最大值(MB)
+      not-persistence-max-size: 128
+      #集群数据同步主题
+      cluster-internal-topic: $cluster$internal$
+      # 开启组播方式集群
+      enable-multicast-group: true
+      # 组播地址
+      multicast-group: 239.255.255.255
+      # 静态ip方式组建集群
+      static-ip-addresses:
+        - 127.0.0.1
+        - 192.168.1.45

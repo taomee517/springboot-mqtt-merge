@@ -1,0 +1,98 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.4.RELEASE")
+        classpath("io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: "maven-publish"
+apply plugin: 'org.springframework.boot'
+apply plugin: "io.spring.dependency-management"
+
+group = "org.example"
+version = "1.0"
+archivesBaseName = 'springboot-mqtt-merge'
+def parentVersion = '1.0'
+
+configurations.all {
+    resolutionStrategy() {
+        //将冲突解决策略改为发生冲突时报错
+        failOnVersionConflict()
+        force "org.slf4j:slf4j-api:1.7.30"
+    }
+}
+
+// 冲突报错 + 以下任务 + 命令行搜索
+// gradlew allDepInsight  --configuration compile --dependency ${keyword}
+//可以搜索出某个jar包被哪些依赖引用，然后用于解决依赖冲突
+//subprojects和allprojects的效果一样
+task allDepInsight(type: DependencyInsightReportTask) {
+    doFirst {}
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url 'https://maven.aliyun.com/repository/public'
+    }
+    mavenCentral()
+}
+
+
+configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencies {
+
+    compile("org.springframework.boot:spring-boot-starter-web") {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
+    }
+
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2'
+
+    //jvm监控及优雅关闭
+    compile(group: 'org.springframework.boot', name: 'spring-boot-starter-actuator') {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
+    }
+
+    compile("org.springframework.kafka:spring-kafka")
+
+    /**integration*/
+    compile("org.springframework.boot:spring-boot-starter-integration"){
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
+
+    /**integration-stream*/
+    compile("org.springframework.integration:spring-integration-stream")
+
+    /**integration-mqtt*/
+    compile("org.springframework.integration:spring-integration-mqtt")
+
+    // netty-all
+    compile group: 'io.netty', name: 'netty-all', version:'4.1.48.Final'
+
+    // ignite
+    compile group: 'org.apache.ignite', name: 'ignite-core', version:'2.6.0'
+
+    // common-lang3
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+
+    //fastjson
+    compile group: 'com.alibaba', name: 'fastjson', version: '1.2.71'
+
+    // lombok
+    compile group: 'org.projectlombok', name: 'lombok'
+    annotationProcessor "org.projectlombok:lombok"
+
+    testCompile group: 'junit', name: 'junit'
+}
