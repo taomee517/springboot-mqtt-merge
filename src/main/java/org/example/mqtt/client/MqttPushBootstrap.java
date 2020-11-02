@@ -8,6 +8,7 @@ import org.example.mqtt.client.config.MqttClientProperties;
 import org.example.mqtt.client.context.ProtocolContext;
 import org.example.mqtt.client.handlers.PushCallback;
 import org.example.mqtt.client.protocol.IMqttProtocol;
+import org.example.mqtt.utils.tls.SslContextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.DependsOn;
@@ -15,6 +16,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -56,7 +60,7 @@ public class MqttPushBootstrap implements SmartLifecycle {
             running = true;
         } catch (Exception e) {
             log.error("初始化MqttClient时发生异常：" + e.getMessage(), e);
-            start();
+//            start();
         }
     }
 
@@ -121,6 +125,16 @@ public class MqttPushBootstrap implements SmartLifecycle {
         options.setCleanSession(true);
         options.setConnectionTimeout(timeout);
         options.setKeepAliveInterval(keepalive);
+
+        Boolean sslEnable = mqttClientProperties.getSslEnable();
+        if (sslEnable) {
+            String sslPassword = mqttClientProperties.getSslPassword();
+            String clientCertPath = mqttClientProperties.getClientCertPath();
+            String rootCertPath = mqttClientProperties.getRootCertPath();
+            SSLContext clientContext = SslContextUtil.getClientContext(clientCertPath, sslPassword, rootCertPath, sslPassword);
+            SSLSocketFactory socketFactory = clientContext.getSocketFactory();
+            options.setSocketFactory(socketFactory);
+        }
         return options;
     }
 

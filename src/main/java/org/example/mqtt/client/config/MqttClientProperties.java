@@ -44,6 +44,19 @@ public class MqttClientProperties {
      * 保持连接数
      */
     private int keepalive;
+
+
+    /**
+     * 证书路径
+     */
+    private String clientCertPath;
+    private String rootCertPath;
+
+    /**
+     * SSL密钥文件密码
+     */
+    private String sslPassword;
+    private Boolean sslEnable;
 }
 
 

@@ -15,14 +15,21 @@ spring:
       ws-port: 55102
       wss-port: 55103
       websocket-path: /mqtt
-      ssl-password: 123456
-      ssl-enable: false
-      server-key-path: keystore/mqtt-broker.pfx
-#      root-key-path: keystore/root.jks
+      ssl-enable: true
+#      ssl-password: 123456
+#      server-key-path: keystore/mqtt-broker.pfx
+      ssl-password: aeroiot
+      server-cert-path: /certs/server.jks
+      root-cert-path: /certs/root.jks
     client:
-      host-url: tcp://127.0.0.1:55100       # mqtt连接tcp地址
+#      host-url: tcp://localhost:55100       # mqtt连接tcp地址
+      host-url: ssl://localhost:55101
       timeout: 100                          # 超时时间
       keepalive: 100                        # 保持连接数
+      ssl-enable: true
+      ssl-password: aeroiot
+      client-cert-path: /certs/client.jks
+      root-cert-path: /certs/root.jks
 
 
   ignite:

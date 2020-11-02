@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ignite.IgniteCache;
 import org.example.mqtt.server.context.mqtt.*;
+import org.example.mqtt.server.service.impl.MsgIdService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -29,6 +31,9 @@ public class ContextManager {
 //    public  Map<String, RetainMessageStore> retainMessageStoreMap = new ConcurrentHashMap<>();
 //    public  Map<String, ConcurrentHashMap<String, SubscribeStore>> subscribeNotWildcardCache = new ConcurrentHashMap<>();
 //    public  Map<String, ConcurrentHashMap<String, SubscribeStore>> subscribeWildcardCache = new ConcurrentHashMap<>();
+
+    @Autowired
+    MsgIdService msgIdService;
 
     @Resource
     private IgniteCache<Integer, Integer> messageIdCache;
@@ -101,9 +106,9 @@ public class ContextManager {
     public  void removeDupPublishMessage(String clientIdentifier) {
         if (dupPublishMessageCache.containsKey(clientIdentifier)) {
             ConcurrentHashMap<Integer, DupPublishMessageStore> map = dupPublishMessageCache.get(clientIdentifier);
-//            map.forEach((messageId, dupPublishMessageStore) -> {
-//                messageIdService.releaseMessageId(messageId);  //todo
-//            });
+            map.forEach((messageId, dupPublishMessageStore) -> {
+                msgIdService.releaseMessageId(messageId);
+            });
             map.clear();
             dupPublishMessageCache.remove(clientIdentifier);
         }
@@ -157,9 +162,9 @@ public class ContextManager {
     public  void removeDupPubRelMessage(String clientIdentifier) {
         if (dupPubRelMessageCache.containsKey(clientIdentifier)) {
             ConcurrentHashMap<Integer, DupPubRelMessageStore> map = dupPubRelMessageCache.get(clientIdentifier);
-//            map.forEach((messageId, dupPubRelMessageStore) -> {
-//                messageIdService.releaseMessageId(messageId);
-//            });
+            map.forEach((messageId, dupPubRelMessageStore) -> {
+                msgIdService.releaseMessageId(messageId);
+            });
             map.clear();
             dupPubRelMessageCache.remove(clientIdentifier);
         }

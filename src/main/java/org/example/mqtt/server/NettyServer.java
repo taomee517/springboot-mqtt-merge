@@ -23,12 +23,14 @@ import org.example.mqtt.server.handlers.BrokerHandler;
 import org.example.mqtt.server.handlers.MqttLoggerHandler;
 import org.example.mqtt.server.handlers.MqttWebSocketCodec;
 import org.example.mqtt.utils.RemotingUtil;
+import org.example.mqtt.utils.tls.SslContextUtil;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -59,6 +61,7 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
     private EventLoopGroup workers;
     private Map<Integer, Channel> channelMap = new ConcurrentHashMap<>();
     private SslContext sslContext;
+    private SSLEngine sslEngine;
     private boolean running = false;
     private boolean sslEnable = false;
 
@@ -69,22 +72,28 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
 
     @Override
     public void start() {
-        initEventPool();
-        sslEnable = mqttServerProperties.getSslEnable();
-        sslContext = buildSslContext();
-        mqttServer();
-        webSocketServer();
-        running = true;
+        try {
+            initEventPool();
+            sslEnable = mqttServerProperties.getSslEnable();
+//        sslContext = buildSslContext();
+            sslEngine = buildSslEngine();
+            mqttServer();
+            webSocketServer();
+            running = true;
+        } catch (Exception e) {
+            log.error("NettyServer启动发生异常：" + e.getMessage(), e);
+        }
     }
 
-    private SslContext buildSslContext() {
-        try {
-            KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(mqttServerProperties.getServerKeyPath());
-            keyStore.load(inputStream, mqttServerProperties.getSslPassword().toCharArray());
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(keyStore, mqttServerProperties.getSslPassword().toCharArray());
-            return SslContextBuilder.forServer(kmf).build();
+//    private SslContext buildSslContext() {
+//        try {
+            // open source 方案
+//            KeyStore keyStore = KeyStore.getInstance("PKCS12");
+//            InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(mqttServerProperties.getServerKeyPath());
+//            keyStore.load(inputStream, mqttServerProperties.getSslPassword().toCharArray());
+//            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+//            kmf.init(keyStore, mqttServerProperties.getSslPassword().toCharArray());
+//            return SslContextBuilder.forServer(kmf).build();
 
             /*
              * 加载server.keystore
@@ -108,10 +117,19 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
 //            tmf.init(serverTrustKeyStore);
 //
 //            return SslContextBuilder.forServer(kmf).trustManager(tmf).build();
-        } catch (Exception e) {
-            log.info("初始化sslContext发异常：" + e.getMessage(), e);
-            return null;
-        }
+//        } catch (Exception e) {
+//            log.info("初始化sslContext发异常：" + e.getMessage(), e);
+//            return null;
+//        }
+//    }
+
+    public SSLEngine buildSslEngine() throws Exception {
+        // ca 签名方案
+        String serverKeyPath = mqttServerProperties.getServerCertPath();
+        String sslPassword = mqttServerProperties.getSslPassword();
+        String rootKeyPath = mqttServerProperties.getRootCertPath();
+        SSLContext serverContext = SslContextUtil.getServerContext(serverKeyPath, sslPassword, rootKeyPath, sslPassword);
+        return serverContext.createSSLEngine();
     }
 
     private void mqttServer() {
@@ -125,7 +143,7 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
                         ChannelPipeline pipeline = socketChannel.pipeline();
                         if (mqttServerProperties.getSslEnable()) {
                             // Netty提供的SSL处理
-                            SSLEngine sslEngine = sslContext.newEngine(socketChannel.alloc());
+//                            SSLEngine sslEngine = sslContext.newEngine(socketChannel.alloc());
                             // 服务端模式
                             sslEngine.setUseClientMode(false);
                             // 不需要验证客户端
@@ -161,7 +179,7 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
                             ChannelPipeline pipeline = socketChannel.pipeline();
                             if (mqttServerProperties.getSslEnable()) {
                                 // Netty提供的SSL处理
-                                SSLEngine sslEngine = sslContext.newEngine(socketChannel.alloc());
+//                                SSLEngine sslEngine = sslContext.newEngine(socketChannel.alloc());
                                 // 服务端模式
                                 sslEngine.setUseClientMode(false);
                                 // 不需要验证客户端

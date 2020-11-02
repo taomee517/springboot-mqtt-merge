@@ -30,8 +30,8 @@ public class MqttServerProperties {
     private String password;
     private Boolean authCheckEnable;
 
-    private String serverKeyPath;
-    private String rootKeyPath;
+    private String serverCertPath;
+    private String rootCertPath;
 
     /**
      * SSL密钥文件密码
