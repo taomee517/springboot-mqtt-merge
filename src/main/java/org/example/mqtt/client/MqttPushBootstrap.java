@@ -131,6 +131,8 @@ public class MqttPushBootstrap implements SmartLifecycle {
             String sslPassword = mqttClientProperties.getSslPassword();
             String clientCertPath = mqttClientProperties.getClientCertPath();
             String rootCertPath = mqttClientProperties.getRootCertPath();
+//            String clientCertPath = "D:\\scripts\\ca-key\\prod\\client.jks";
+//            String rootCertPath = "D:\\scripts\\ca-key\\prod\\root.jks";
             SSLContext clientContext = SslContextUtil.getClientContext(clientCertPath, sslPassword, rootCertPath, sslPassword);
             SSLSocketFactory socketFactory = clientContext.getSocketFactory();
             options.setSocketFactory(socketFactory);

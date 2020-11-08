@@ -14,8 +14,6 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mqtt.server.config.MqttServerProperties;
@@ -29,11 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import java.io.InputStream;
-import java.security.KeyStore;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
@@ -60,8 +55,6 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
     private EventLoopGroup boss;
     private EventLoopGroup workers;
     private Map<Integer, Channel> channelMap = new ConcurrentHashMap<>();
-    private SslContext sslContext;
-    private SSLEngine sslEngine;
     private boolean running = false;
     private boolean sslEnable = false;
 
@@ -75,8 +68,6 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
         try {
             initEventPool();
             sslEnable = mqttServerProperties.getSslEnable();
-//        sslContext = buildSslContext();
-            sslEngine = buildSslEngine();
             mqttServer();
             webSocketServer();
             running = true;
@@ -128,12 +119,16 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
         String serverKeyPath = mqttServerProperties.getServerCertPath();
         String sslPassword = mqttServerProperties.getSslPassword();
         String rootKeyPath = mqttServerProperties.getRootCertPath();
+
+//        String sslPassword = mqttServerProperties.getSslPassword();
+//        String serverKeyPath = "D:\\scripts\\ca-key\\prod\\server.jks";
+//        String rootKeyPath = "D:\\scripts\\ca-key\\prod\\root.jks";
         SSLContext serverContext = SslContextUtil.getServerContext(serverKeyPath, sslPassword, rootKeyPath, sslPassword);
         SSLEngine sslEngine = serverContext.createSSLEngine();
         // 服务端模式
         sslEngine.setUseClientMode(false);
-        // 不需要验证客户端
-        sslEngine.setNeedClientAuth(false);
+        // 需要验证客户端
+        sslEngine.setNeedClientAuth(true);
         return sslEngine;
     }
 
@@ -147,12 +142,8 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline pipeline = socketChannel.pipeline();
                         if (mqttServerProperties.getSslEnable()) {
-                            // Netty提供的SSL处理
-//                            SSLEngine sslEngine = sslContext.newEngine(socketChannel.alloc());
-//                            // 服务端模式
-//                            sslEngine.setUseClientMode(false);
-//                            // 不需要验证客户端
-//                            sslEngine.setNeedClientAuth(false);
+                            //需要为每个连接创建一个sslEngine
+                            SSLEngine sslEngine = buildSslEngine();
                             pipeline.addLast("ssl", new SslHandler(sslEngine));
                         }
                         pipeline.addLast("mqtt-decoder", new MqttDecoder());
@@ -183,12 +174,8 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             ChannelPipeline pipeline = socketChannel.pipeline();
                             if (mqttServerProperties.getSslEnable()) {
-                                // Netty提供的SSL处理
-//                                SSLEngine sslEngine = sslContext.newEngine(socketChannel.alloc());
-//                                // 服务端模式
-//                                sslEngine.setUseClientMode(false);
-//                                // 不需要验证客户端
-//                                sslEngine.setNeedClientAuth(false);
+                                //需要为每个连接创建一个sslEngine
+                                SSLEngine sslEngine = buildSslEngine();
                                 pipeline.addLast("ssl", new SslHandler(sslEngine));
                             }
                             // 将请求和应答消息编码或解码为HTTP消息

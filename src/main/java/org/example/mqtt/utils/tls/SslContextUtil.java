@@ -3,6 +3,8 @@ package org.example.mqtt.utils.tls;
 import io.netty.handler.ssl.SslContext;
 
 import javax.net.ssl.*;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.Objects;
@@ -51,7 +53,13 @@ public class SslContextUtil {
 
 
     private static KeyStore getKeyStore(String certPath, String certPwd) throws Exception{
-        InputStream is = SslContextUtil.class.getResourceAsStream(certPath);
+        InputStream is = null;
+        if (certPath.startsWith("/")) {
+            is = SslContextUtil.class.getResourceAsStream(certPath);
+        }else {
+            File file = new File(certPath);
+            is = new FileInputStream(file);
+        }
         if(Objects.isNull(is)){
             throw new Exception("找不到数字证书");
         }
