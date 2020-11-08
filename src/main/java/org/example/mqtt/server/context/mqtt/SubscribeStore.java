@@ -1,7 +1,3 @@
-/**
- * Copyright (c) 2018, Mr.Wang (recallcode@aliyun.com) All rights reserved.
- */
-
 package org.example.mqtt.server.context.mqtt;
 
 import java.io.Serializable;

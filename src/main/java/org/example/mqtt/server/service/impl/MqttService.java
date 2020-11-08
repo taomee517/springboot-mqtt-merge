@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * @author 罗涛
- * @title G2cProtocol
+ * @title MqttService
  * @date 2020/9/22 14:14
  */
 

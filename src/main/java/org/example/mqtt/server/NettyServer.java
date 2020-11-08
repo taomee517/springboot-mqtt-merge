@@ -129,7 +129,12 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
         String sslPassword = mqttServerProperties.getSslPassword();
         String rootKeyPath = mqttServerProperties.getRootCertPath();
         SSLContext serverContext = SslContextUtil.getServerContext(serverKeyPath, sslPassword, rootKeyPath, sslPassword);
-        return serverContext.createSSLEngine();
+        SSLEngine sslEngine = serverContext.createSSLEngine();
+        // 服务端模式
+        sslEngine.setUseClientMode(false);
+        // 不需要验证客户端
+        sslEngine.setNeedClientAuth(false);
+        return sslEngine;
     }
 
     private void mqttServer() {
@@ -144,10 +149,10 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
                         if (mqttServerProperties.getSslEnable()) {
                             // Netty提供的SSL处理
 //                            SSLEngine sslEngine = sslContext.newEngine(socketChannel.alloc());
-                            // 服务端模式
-                            sslEngine.setUseClientMode(false);
-                            // 不需要验证客户端
-                            sslEngine.setNeedClientAuth(false);
+//                            // 服务端模式
+//                            sslEngine.setUseClientMode(false);
+//                            // 不需要验证客户端
+//                            sslEngine.setNeedClientAuth(false);
                             pipeline.addLast("ssl", new SslHandler(sslEngine));
                         }
                         pipeline.addLast("mqtt-decoder", new MqttDecoder());
@@ -180,10 +185,10 @@ public class NettyServer implements InitializingBean, SmartLifecycle {
                             if (mqttServerProperties.getSslEnable()) {
                                 // Netty提供的SSL处理
 //                                SSLEngine sslEngine = sslContext.newEngine(socketChannel.alloc());
-                                // 服务端模式
-                                sslEngine.setUseClientMode(false);
-                                // 不需要验证客户端
-                                sslEngine.setNeedClientAuth(false);
+//                                // 服务端模式
+//                                sslEngine.setUseClientMode(false);
+//                                // 不需要验证客户端
+//                                sslEngine.setNeedClientAuth(false);
                                 pipeline.addLast("ssl", new SslHandler(sslEngine));
                             }
                             // 将请求和应答消息编码或解码为HTTP消息
