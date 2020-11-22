@@ -11,10 +11,11 @@ import org.apache.ignite.IgniteMessaging;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheMode;
-import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.configuration.DataRegionConfiguration;
-import org.apache.ignite.configuration.DataStorageConfiguration;
-import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.cache.CacheWriteSynchronizationMode;
+import org.apache.ignite.cluster.ClusterState;
+import org.apache.ignite.configuration.*;
+import org.apache.ignite.logger.log4j2.Log4J2Logger;
+import org.apache.ignite.spi.discovery.DiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
@@ -38,23 +39,58 @@ public class IgniteAutoConfig {
 		// Ignite实例名称
 		igniteConfiguration.setIgniteInstanceName(igniteProperties.getBrokerId());
 		// Ignite日志
-//		Logger logger = LoggerFactory.getLogger("org.apache.ignite");
-//		igniteConfiguration.setGridLogger(new Slf4jLogger(logger));
+		igniteConfiguration.setGridLogger(new Log4J2Logger("F:\\GitHub\\springboot-mqtt-merge\\src\\main\\resources\\log4j2.xml"));
+		//配置数据区域
+		igniteConfiguration.setDataStorageConfiguration(dataStorageConfiguration());
+		//2.9.0版本，因集群搭建失败新增配置
+		igniteConfiguration.setPeerClassLoadingEnabled(true);
+		igniteConfiguration.setMetricsLogFrequency(0);
+		igniteConfiguration.setLifecycleBeans(new IgniteLifeCycleBean());
+		// 集群, 基于组播或静态IP配置
+		igniteConfiguration.setDiscoverySpi(discoverySpi());
+		Ignite ignite = Ignition.start(igniteConfiguration);
+		//2.9.0版本 由ignite.cluster().active(true)变更而来
+		ignite.cluster().state(ClusterState.ACTIVE);
+		return ignite;
+	}
+
+	private DataStorageConfiguration dataStorageConfiguration(){
 		// 非持久化数据区域
 		DataRegionConfiguration notPersistence = new DataRegionConfiguration().setPersistenceEnabled(false)
-			.setInitialSize(igniteProperties.getNotPersistenceInitialSize() * 1024 * 1024)
-			.setMaxSize(igniteProperties.getNotPersistenceMaxSize() * 1024 * 1024).setName("not-persistence-data-region");
+				.setInitialSize(igniteProperties.getNotPersistenceInitialSize() * 1024 * 1024)
+				.setMaxSize(igniteProperties.getNotPersistenceMaxSize() * 1024 * 1024).setName("not-persistence-data-region");
 		// 持久化数据区域
 		DataRegionConfiguration persistence = new DataRegionConfiguration().setPersistenceEnabled(true)
-			.setInitialSize(igniteProperties.getPersistenceInitialSize() * 1024 * 1024)
-			.setMaxSize(igniteProperties.getPersistenceMaxSize() * 1024 * 1024).setName("persistence-data-region");
+				.setInitialSize(igniteProperties.getPersistenceInitialSize() * 1024 * 1024)
+				.setMaxSize(igniteProperties.getPersistenceMaxSize() * 1024 * 1024).setName("persistence-data-region");
 		DataStorageConfiguration dataStorageConfiguration = new DataStorageConfiguration().setDefaultDataRegionConfiguration(notPersistence)
-			.setDataRegionConfigurations(persistence)
-			.setWalArchivePath(StringUtils.isNotBlank(igniteProperties.getPersistenceStorePath()) ? igniteProperties.getPersistenceStorePath() : null)
-			.setWalPath(StringUtils.isNotBlank(igniteProperties.getPersistenceStorePath()) ? igniteProperties.getPersistenceStorePath() : null)
-			.setStoragePath(StringUtils.isNotBlank(igniteProperties.getPersistenceStorePath()) ? igniteProperties.getPersistenceStorePath() : null);
-		igniteConfiguration.setDataStorageConfiguration(dataStorageConfiguration);
-		// 集群, 基于组播或静态IP配置
+				.setDataRegionConfigurations(persistence)
+				.setWalArchivePath(StringUtils.isNotBlank(igniteProperties.getPersistenceStorePath()) ? igniteProperties.getPersistenceStorePath() : null)
+				.setWalPath(StringUtils.isNotBlank(igniteProperties.getPersistenceStorePath()) ? igniteProperties.getPersistenceStorePath() : null)
+				.setStoragePath(StringUtils.isNotBlank(igniteProperties.getPersistenceStorePath()) ? igniteProperties.getPersistenceStorePath() : null);
+		return dataStorageConfiguration;
+	}
+
+	private CacheConfiguration shortCacheConfiguration(){
+		CacheConfiguration cacheConfigClass = new CacheConfiguration();
+		cacheConfigClass.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
+		cacheConfigClass.setCacheMode(CacheMode.REPLICATED);
+		cacheConfigClass.setWriteSynchronizationMode(CacheWriteSynchronizationMode.FULL_ASYNC);
+		cacheConfigClass.setName("short-cache");
+		cacheConfigClass.setDataRegionName("short-cache-region");
+		return cacheConfigClass;
+	}
+
+	private TransactionConfiguration transactionConfiguration(){
+		TransactionConfiguration transConfig = new TransactionConfiguration();
+//		transConfig.setTxManagerFactory(FactoryBuilder.factoryOf(SpringTransactionManager.class));
+		return transConfig;
+	}
+
+	private DiscoverySpi discoverySpi() {
+//		TcpDiscoveryMulticastIpFinder ipFinder = new TcpDiscoveryMulticastIpFinder();
+//		ipFinder.setAddresses(Collections.singletonList("127.0.0.1:47500..47509"));
+//		return new TcpDiscoverySpi().setIpFinder(ipFinder);
 		TcpDiscoverySpi tcpDiscoverySpi = new TcpDiscoverySpi();
 		if (igniteProperties.isEnableMulticastGroup()) {
 			TcpDiscoveryMulticastIpFinder tcpDiscoveryMulticastIpFinder = new TcpDiscoveryMulticastIpFinder();
@@ -65,10 +101,7 @@ public class IgniteAutoConfig {
 			tcpDiscoveryVmIpFinder.setAddresses(igniteProperties.getStaticIpAddresses());
 			tcpDiscoverySpi.setIpFinder(tcpDiscoveryVmIpFinder);
 		}
-		igniteConfiguration.setDiscoverySpi(tcpDiscoverySpi);
-		Ignite ignite = Ignition.start(igniteConfiguration);
-		ignite.cluster().active(true);
-		return ignite;
+		return tcpDiscoverySpi;
 	}
 
 	@Bean

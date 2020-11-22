@@ -15,18 +15,18 @@ spring:
       ws-port: 55102
       wss-port: 55103
       websocket-path: /mqtt
-      ssl-enable: true
+      ssl-enable: false
 #      ssl-password: 123456
 #      server-key-path: keystore/mqtt-broker.pfx
       ssl-password: aeroiot
       server-cert-path: /certs/server.jks
       root-cert-path: /certs/root.jks
     client:
-#      host-url: tcp://localhost:55100       # mqtt连接tcp地址
-      host-url: ssl://localhost:55101
+      host-url: tcp://localhost:55100       # mqtt连接tcp地址
+#      host-url: ssl://localhost:55101
       timeout: 100                          # 超时时间
       keepalive: 100                        # 保持连接数
-      ssl-enable: true
+      ssl-enable: false
       ssl-password: aeroiot
       client-cert-path: /certs/client.jks
       root-cert-path: /certs/root.jks
@@ -37,7 +37,7 @@ spring:
       # broker唯一标识
       broker-id: mqtt-broker-1
       # 持久化磁盘存储路径
-#      persistence-store-path: D:/ignite/data
+      persistence-store-path: D:/ignite/data
       # 持久化缓存内存初始化大小(MB)
       persistence-initial-size: 64
       # 持久化缓存占用内存最大值(MB)
