@@ -39,7 +39,7 @@ public class IgniteAutoConfig {
 		// Ignite实例名称
 		igniteConfiguration.setIgniteInstanceName(igniteProperties.getBrokerId());
 		// Ignite日志
-		igniteConfiguration.setGridLogger(new Log4J2Logger("F:\\GitHub\\springboot-mqtt-merge\\src\\main\\resources\\log4j2.xml"));
+		igniteConfiguration.setGridLogger(new Log4J2Logger(igniteProperties.getLoggerPath()));
 		//配置数据区域
 		igniteConfiguration.setDataStorageConfiguration(dataStorageConfiguration());
 		//2.9.0版本，因集群搭建失败新增配置

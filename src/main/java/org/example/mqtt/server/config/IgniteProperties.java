@@ -62,4 +62,9 @@ public class IgniteProperties {
      * 组播地址
      */
     private String multicastGroup;
+
+    /**
+     * 日志文件的绝对路径
+     */
+    private String loggerPath;
 }

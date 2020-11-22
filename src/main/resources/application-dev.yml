@@ -56,3 +56,4 @@ spring:
       static-ip-addresses:
         - 127.0.0.1
         - 192.168.0.107
+      logger-path: F:\GitHub\springboot-mqtt-merge\src\main\resources\log4j2.xml
